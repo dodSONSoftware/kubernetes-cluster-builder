@@ -2,11 +2,11 @@
 ###### [ dodSON Software - `dodson labs` ] September 2023
 This project contains a set of [Ansible Playbooks](https://www.ansible.com/) and [Bash Scripts](https://www.gnu.org/software/bash/manual/bash.html) that has been designed to install and configure a [K3S **Kubernetes Cluster**](https://k3s.io/) on a set of [Raspberry Pis](https://www.raspberrypi.com/) along with numerous Kubernetes tools.
 
-`DISCLAIMER:` I'll be the first one to admit that I do not know that much about **Linux**, **Ansible** or **Kubernetes**; however, I am learning. This project was conceived after I spent *many, many* weekends researching how to install **Kubernetes**, and *installing* **Kubernetes**. So, instead of just a bunch of notes and links, I created these Ansible Playbooks and Bash Scripts. Even with these Ansible Playbooks and Bash Scripts it takes some time to bring up a **Kubernetes Cluster**; however, it will build a **Kubernetes Cluster** correctly. I have had a lot of fun and I learned a lot doing this. I can only hope it helps others.
+`DISCLAIMER:` I'll be the first one to admit that I do not know much about **Linux**, **Ansible** or **Kubernetes**; however, I am learning. This project was conceived after spending *many, many* weekends and late-nights`` researching how to install **Kubernetes**, and *installing* **Kubernetes**. So, instead of just a bunch of notes and links, I created these Ansible Playbooks and Bash Scripts to automate building a Kubernetes Cluster.
 
-`CONTACT ME:` You can contact me at dodsonsoftware@gmail.com if you have any questions, comments or suggestions.
+`CONTACT ME:` You can contact me at dodsonsoftware@hotmail.com if you have any questions, comments or suggestions.
 
-`ACKNOWLEDGMENTS:` I have spent many late nights and weekends searching the web and installing software to get to this point; see the end of this document for a [References](#references) section for links to many useful resources. However, I want to, specifically, thank [VladoPortos](https://ko-fi.com/vladoportos) for his [rpi4cluster.com](https://rpi4cluster.com/) webpage. It has been infinitely useful. :smiley:
+`ACKNOWLEDGMENTS:` I have spent many late nights and weekends searching the web and installing software to get to this point; at the end of this document is a [References](#references) section with links to many useful resources. However, I want to, specifically, thank [VladoPortos](https://ko-fi.com/vladoportos) for his [rpi4cluster.com](https://rpi4cluster.com/) webpage. It has been infinitely useful and I only wish is that I would have found it earlier in my research. :smiley:
 
 ## Table of Contents
 * [The Current Setup](#the-current-setup)
@@ -36,13 +36,13 @@ The following describes the hardware and software setup as of September 2023.
 `NOTE:` It is important to understand that these Ansible Playbooks and Bash Scripts were designed to be run against/on Raspberry Pis using a Linux OS, specifically **Ubuntu 22.04.3 LTS** and are **VERY** tailored to a specific hardware setup and set of software packages. Therefore, there may be commands and operations that only work on a Raspberry Pi and/or Ubuntu.
 
 ## Overview
-The **archive machine** and all of the **Kubernetes Cluster** machines are built using [Raspberry Pi 4 Model B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/specifications/) single-board computers with 4 cores ([arm v8](https://en.wikipedia.org/wiki/ARM_architecture_family)/[aarch64](https://en.wikipedia.org/wiki/AArch64)) and 8 GiBs ram. All machines have [Ubuntu Server 22.04.3 LTS](https://releases.ubuntu.com/releases/22.04/) operating systems. The operating system is written to a 64 GiB SD Card and updated and upgraded before running the scripts. The **archive machine** provides a network share and a private docker registry where the Kubernetes Cluster can pull custom container images. All of the Rapsberry Pis are connected through a Gigabit Network Switch.
+The **archive machine** and all of the **Kubernetes Cluster** machines are built using [Raspberry Pi 4 Model B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/specifications/) single-board computers with 4 cores ([arm v8](https://en.wikipedia.org/wiki/ARM_architecture_family)/[aarch64](https://en.wikipedia.org/wiki/AArch64)) and 8 GiBs ram. All machines have [Ubuntu Server 22.04.3 LTS](https://releases.ubuntu.com/releases/22.04/) operating systems. The operating system is written to a 64 GiB SD Card and updated and upgraded before running the scripts. The **archive machine** provides a **Samba Network Share**, a **Gitea Servce** and a **Private Docker Registry** where the Kubernetes Cluster can pull custom container images. All of the Rapsberry Pis are connected through a **Gigabit Network Switch**.
 
 The following image shows the hardware layout of the **Kubernetes Cluster** and it's supporting **archive machine**. 
 
-<img src="./pictures/kubernetes-hw-layout.jpg" width="700" />
+<img src="./pictures/kubernetes-hw-layout.jpg" width="700" height="500"/>
 
-The **archive machine** has a 5 TiB Hard Disk drive, attached to the high-speed USB port, split into two partitions. The **Kubernetes Cluster** is made with 6 Raspberry Pis; each one, except the **kubernetes contoller node**, has a 128 GiB USB drive plugged into the high-speed USB ports. All of the Raspberry Pis are connected through a Gigabit Network Switch with Cat 6 cables.
+The **archive machine** has a 5 TiB Hard Disk drive, attached to the high-speed USB port, split into two partitions. The **Kubernetes Cluster** is made with 6 Raspberry Pis; each one, except the **kubernetes contoller node**, has a 128 GiB USB drive plugged into the high-speed USB ports. All of the Raspberry Pis are connected through a **Gigabit Network Switch** with Cat 6 cables.
 
 6 Raspberry Pi **Kubernetes Cluster**:
 - 24 Cores
@@ -75,23 +75,23 @@ The following tools will also be installed and configured:
 ## My Custom Grafana Dashboard
 Peeking towards the end of the build process, here is a look at my custom Grafana Kubernetes Dashboard. Currently, my custom Grafana Dashboard also contains some sensor data; specifically, the temperatures from inside my house, outside my house and the pool along with some 24 hour minimums, maximums and a graph.
 
-<img src="./pictures/custom-grafana.png" width="800" />
+<img src="./pictures/custom-grafana.png" width="800"/>
 
 ## The Archive Machine
 The **archive machine's** primary purpose is to host a [Samba Network Share](https://en.wikipedia.org/wiki/Samba_(software)), the [Private Docker Registry](https://docs.docker.com/registry/deploying/) and a [Gitea Service](https://about.gitea.com/). The **archive machine** is using a *Ubuntu 22.04.3 LTS* operating system; best practice is to burn a new operating system and Update and Upgrade it before running the Ansible Playbooks.
 
 A 5 TiB HDD has been partitioned into two parts; a 4 TiB **network share** partition and a 1 TiB **archive** partition. The partitions must be created before running any Ansible Playbooks or Bash Scripts.
 
-The installation scripts expects these partitions to already exist; the reasoning is, that we could be re-building the **archive machine** and already have directories and files stored on the network **share** partition and the **archive** partition may already have images uploaded to it and we do not want to erase these things. The scripts will also check for the certificates and only create them if they don't already exist.
+The Ansible Playbooks and Bash Scripts expects these partitions to already exist; the reasoning is, that we could be re-building the **archive machine** and already have directories and files stored on the network **share** partition and the **archive** partition may already have images uploaded to it and we do not want to erase these things. The scripts will also check for the certificates and only create them if they don't already exist.
 
-The scripts will take care of adding these partitions to the `/etc/fstab` file for you so they will automatically be mounted on boot up. These partitions will be mounted and accessible under the `/mnt` directory as `/mnt/share` and `/mnt/archive`.
+The Ansible Playbooks and Bash Scripts will take care of adding these partitions to the `/etc/fstab` file for you so they will automatically be mounted on boot up. These partitions will be mounted and accessible under the `/mnt` directory as `/mnt/share` and `/mnt/archive`.
 
 `NOTE:` I could have installed the [Gitea Service](https://about.gitea.com/) onto the **Kubernetes Cluster**, see [this](https://docs.gitea.com/installation/install-on-kubernetes) webpage for instruction on how to do so, however, since I'm use this **Kubernetes Cluster** to learn about **Kubernetes** and the **Kubernetes Tools**, I thought it would better to install the [Gitea Service](https://about.gitea.com/) in a more stable environment. It is not unreasonable to assume that I may bring the **Kubernetes Cluster** down or damage it in some way while using it to learn.
 
-The **archive machine** must be setup first, then the **Kubernetes Control node** followed by as many **Kubernetes Agent nodes** as you desire.
+The **archive machine** must be setup first, then the **Kubernetes Control node** followed by as many **Kubernetes Agent nodes** as you desire; the **Kubernetes Tools** should be installed last.
 
 ### The /mnt Directory
-<img src="./pictures/shared-mnt-directory.png" width="300"/>
+<img src="./pictures/shared-mnt-directory.png" width="250"/>
 
 The `/mnt` directory contains the `/archive` and the network `/share` partitions.
 
@@ -135,19 +135,19 @@ Finally, return to the **kubernetes contoller node** and run the `~/k3s-tools/in
 
 ### Running the Ansible Playbook
 
-<img src="./pictures/ansible-playbook.png" width="500"/>
+<img src="./pictures/ansible-playbook.png" width="450"/>
 
 ## Common Script Functionality
-All of the scripts will setup the operating systems in a similar fashion; there is a common set of APT packages installed, a common set of aliases, common command line prompts, VIM is configured the same and the date and time are configured to update automatically.
+The Ansible Playbooks and Bash Scripts will setup the operating systems in a similar fashion; there are a common set of APT packages installed, a common set of aliases, common command line prompts, VIM is configured the same and the date and time are configured to update automatically.
 
 ### Command Line Prompts
-<img src="./pictures/common-prompts.png" width="700"/>
+<img src="./pictures/common-prompts.png" width="800"/>
 
-The standard user gets a command line prompt with the IP Address, the user name and the current working directory on the left side. And the last command's exit code, the duration of the last command and the current date and time on the right side.
+The standard user gets a command line prompt with the `IP Address`, the `user name` and the `current working directory` on the left side. And the `last command's exit code`, the `duration of the last command` and the `current date and time` on the right side.
 
-The root user gets the same command line prompt, except for a line across the middle and the user name is inverted with white on red text. This helps to differentiate the standard user from the root user.
+The root user gets the same command line prompt, except for a line across the middle and the `user name` is inverted with white text on a red background. This helps to differentiate the standard user from the root user.
 
-The cursor is below the command line prompt; the standard user will get a dollar sigh ( $ ) and the root user will get a pound sign ( # ).
+The cursor is below the command line prompt; the standard user will get a dollar sign ( `$` ) and the root user will get a [number sign](https://en.wikipedia.org/wiki/Number_sign) ( `#` ).
 
 If there is less than 80 columns on the screen, then the date and time will not be displayed.
 
@@ -186,19 +186,17 @@ The **kubernetes controller** machine includes a few aliases not available on th
 * kubetoken
     * Displays the Kubernetes Server Connection Token, required to install **Agents**
 * kubedashboardtoken
-    * Displays the **Kubernetes Dashbord** Login Token, required to login to the Kubernetes Dashboard
+    * Displays the **Kubernetes Dashboard** Login Token, required to login to the Kubernetes Dashboard
 
 ### VIM
-<img src="./pictures/vim-example.png" width="700">
+<img src="./pictures/vim-example.png" width="600">
 
 [VIM](https://en.wikipedia.org/wiki/Vim_(text_editor)) has been tweaked, yet it is a *constant* work-in-progress. :smiley:
 
 ### Date and Time
 The date and time are configured to automatically check for the correct time using the following settings in the `/etc/systemd/timesyncd.conf` file:
 
-`NTP=0.us.pool.ntp.org`
-
-`FallbackNTP=1.us.pool.ntp.org 2.us.pool.ntp.org 3.us.pool.ntp.org`
+<img src="./pictures/timedate-sync-info.png" width="600">
 
 ## Building the Archive Machine
 First, the **archive machine** needs to be setup. Change the directory to `archive-server` and edit the `configure-os.yaml` file. You may want to use a text search-and-replace function to replace the server's username from `archive` to whatever you wish. 
@@ -255,7 +253,7 @@ This script will perform the following actions:
 * Gets the IP Address, for verification that it was applied correctly
 * Installs the samba share
 * Creates a `git` user
-* Creates required folder for gitea oand postgres in the `/mnt/archive` folder
+* Creates the required folders for gitea and postgres in the `/mnt/archive` folder
 * Installs `Gitea` along with `postgres`
 * Checks the private docker repository by retrieving it's catalog
 * Asks if you would like to delete this script file
@@ -565,7 +563,7 @@ k3s - Lightweight Kubernetes
 * [k3s](https://k3s.io/)
 * [k3s Documentation](https://docs.k3s.io/)
 
-k9s
+k9s - Terminal-based Kubernetes UI
 * [k9s](https://k9scli.io/)
 * [k9s Github](https://github.com/derailed/k9s)
 
